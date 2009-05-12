@@ -154,7 +154,7 @@
     </target>
     
     <target name="test" description="Run the tests">
-      <java fork="true" jar="rhino/js.jar">
+      <java fork="true" jar="rhino/js.jar" failonerror="true">
         <arg value="test/test.js"/>    
         <jvmarg value="-Dfile.encoding=utf-8"/>
       </java>
