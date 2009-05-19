@@ -1,14 +1,30 @@
 load("build/env.js");
 
+var totalResults = {
+    tests: 0,
+    assertions: 0,
+    failures: 0,
+    errors: 0
+};
+
+var testInProgress = false;
+
 var runTest = function($env) {
     var PROTOTYPE_TEST_LOCATION = "test/unit/tmp/";
-    var testInProgress = false;
+    var currentTest;
 
       //let it load the script from the html
     $env.scriptTypes = {
         "text/javascript": true
     };
-    
+
+    var addResults = function(results) {
+        totalResults.tests += results.tests;
+        totalResults.assertions += results.assertions;
+        totalResults.failures += results.failures;
+        totalResults.errors += results.errors;
+    };
+
     var printResults = function() {
         if (testInProgress) {
             setTimeout(printResults, 100);
@@ -16,6 +32,7 @@ var runTest = function($env) {
             for(var i=0; i < Test.Unit.runners.length; i++) {
                 var runner = Test.Unit.runners[i];
                 print(currentTest + " - " + runner.summary());
+                addResults(runner.getResult());
                 PROTOTYPE_TEST_LOCATION = "";
             }
         }
@@ -28,10 +45,10 @@ var runTest = function($env) {
             }, 300);
             return;
         }
-        currentTest = test;
         testInProgress = true;
-        window.onload = function() {
+        currentTest = test;
 
+        window.onload = function() {
             $env.warn('Defining Test.Unit.Runner.finish');
             Test.Unit.Runner.addMethods({
               finish: function() {
@@ -42,6 +59,7 @@ var runTest = function($env) {
               }
             });
         };
+
         var testLocation = PROTOTYPE_TEST_LOCATION + test + ".html";
         window.location = testLocation;
     };
@@ -49,7 +67,6 @@ var runTest = function($env) {
 
 // runTest("ajax_test");
 // runTest("array_test");
-runTest("base_test");
 runTest("base_test");
 // runTest("class_test");
 // runTest("date_test");
@@ -70,3 +87,19 @@ runTest("base_test");
 // runTest("selector_test");
 // runTest("string_test");
 // runTest("unittest_test");
+
+    var printTotalResultSummary = function() {
+        if (testInProgress) {
+            setTimeout(function() {printTotalResultSummary();}, 300);
+        } else {
+            print("TOTAL");
+            print(totalResults.tests + " tests, " +
+                  totalResults.assertions + " assertions, " +
+                  totalResults.failures + " failures, " +
+                  totalResults.errors + " errors");
+            var successRate = (totalResults.tests - totalResults.errors - totalResults.failures) / totalResults.tests * 100;
+            print("SUCCESS RATE = " + successRate.toFixed(2) + "%");
+        }
+    };
+
+    printTotalResultSummary();
