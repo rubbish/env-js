@@ -1,12 +1,14 @@
 load("build/env.js");
 
-var runTest = function() {
-    var PROTOTYPE_JS = "dist/prototype.js";
-    var PROTOTYPE_TEST_LOCATION = "test/unit/tmp/"
-
+var runTest = function($env) {
+    var PROTOTYPE_TEST_LOCATION = "test/unit/tmp/";
     var testInProgress = false;
-    var currentTest;
 
+      //let it load the script from the html
+    $env.scriptTypes = {
+        "text/javascript": true
+    };
+    
     var printResults = function() {
         if (testInProgress) {
             setTimeout(printResults, 100);
@@ -14,41 +16,40 @@ var runTest = function() {
             for(var i=0; i < Test.Unit.runners.length; i++) {
                 var runner = Test.Unit.runners[i];
                 print(currentTest + " - " + runner.summary());
+                PROTOTYPE_TEST_LOCATION = "";
             }
         }
-    }
+    };
 
     return function(test) {
+        if (testInProgress) {
+            setTimeout(function() {
+                runTest(test);
+            }, 300);
+            return;
+        }
         currentTest = test;
+        testInProgress = true;
         window.onload = function() {
-            load(PROTOTYPE_TEST_LOCATION + "assets/prototype.js");
-            load(PROTOTYPE_TEST_LOCATION + "assets/unittest.js");
-            load(PROTOTYPE_TEST_LOCATION + "tests/" + test + ".js");
 
+            $env.warn('Defining Test.Unit.Runner.finish');
             Test.Unit.Runner.addMethods({
-                run: function() {
-                    this.logger = new Test.Unit.Logger(this.options.testLog);
-                    this.runTests.bind(this).delay(0.1);
-                    testInProgress = true;
-                },
-
-                finish: function() {
+              finish: function() {
                     this.postResults();
                     this.logger.summary(this.summary());
+                    printResults();
                     testInProgress = false;
-                }
+              }
             });
-            
-            Test.Unit.AutoRunner.run();
-            setTimeout(printResults, 100);
-        }
+        };
         var testLocation = PROTOTYPE_TEST_LOCATION + test + ".html";
         window.location = testLocation;
-    }
-}();
+    };
+}(__env__);
 
 // runTest("ajax_test");
 // runTest("array_test");
+runTest("base_test");
 runTest("base_test");
 // runTest("class_test");
 // runTest("date_test");
